@@ -109,7 +109,24 @@ api_key = "sk-..."  # Replace with your actual API key
 max_tokens = 4096
 temperature = 0.0
 
-# Optional configuration for specific LLM models
+# Optional configuration for specific LLM models and multi-model orchestration
+[llm.vision]
+model = "gpt-4o"
+base_url = "https://api.openai.com/v1"
+api_key = "sk-..."  # Replace with your actual API key
+
+# Example of multi-model orchestration:
+# The LLMRouter will automatically select the model based on the agent's name (e.g., 'planning' or 'executor')
+[llm.planning]
+model = "claude-3-5-sonnet"
+base_url = "https://api.anthropic.com/v1"
+api_key = "sk-ant-..."
+
+[llm.executor]
+model = "qwen-max"
+base_url = "https://api.qwen.com/v1"
+api_key = "sk-qwen-..."
+
 [llm.vision]
 model = "gpt-4o"
 base_url = "https://api.openai.com/v1"

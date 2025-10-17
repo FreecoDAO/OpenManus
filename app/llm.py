@@ -22,6 +22,7 @@ from app.bedrock import BedrockClient
 from app.config import LLMSettings, config
 from app.exceptions import TokenLimitExceeded
 from app.logger import logger  # Assuming a logger is set up in your app
+import asyncio
 from app.schema import (
     ROLE_VALUES,
     TOOL_CHOICE_TYPE,
@@ -234,6 +235,24 @@ class LLM:
 
     def count_message_tokens(self, messages: List[dict]) -> int:
         return self.token_counter.count_message_tokens(messages)
+
+    def ask_sync(
+        self,
+        messages: List[Union[dict, Message]],
+        system_msgs: Optional[List[Union[dict, Message]]] = None,
+        temperature: Optional[float] = None,
+    ) -> str:
+        """
+        Synchronous wrapper for the async ask method.
+        """
+        return asyncio.run(
+            self.ask(
+                messages=messages,
+                system_msgs=system_msgs,
+                stream=False,  # Force non-streaming for sync wrapper
+                temperature=temperature,
+            )
+        )
 
     def update_token_count(self, input_tokens: int, completion_tokens: int = 0) -> None:
         """Update token counts"""
