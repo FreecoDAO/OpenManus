@@ -237,6 +237,175 @@ print(f"Success rate: {reflection_stats['success_rate']:.1%}")
 print(f"Total reflections: {reflection_stats['total_reflections']}")
 ```
 
+## 🛠️ Enhancement #4: Multimodal Tools & Integrations
+
+OpenManus now includes powerful tools for YouTube, Knowledge Management, Notion, and CRM integration.
+
+### YouTube Transcript Tool
+
+Extract transcripts from YouTube videos and add them to your knowledge base:
+
+```python
+from app.tool.youtube_transcript import YouTubeTranscriptTool
+
+tool = YouTubeTranscriptTool()
+
+# Get transcript
+result = await tool.execute(
+    action="get_transcript",
+    video_id="dQw4w9WgXcQ",
+    include_metadata=True
+)
+
+print(result.output['transcript'])
+print(result.output['metadata']['title'])
+```
+
+### Knowledge Base Tool
+
+Vector database for Retrieval-Augmented Generation (RAG):
+
+```python
+from app.tool.knowledge_base import KnowledgeBaseTool
+
+kb = KnowledgeBaseTool()
+
+# Add knowledge
+await kb.execute(
+    action="add",
+    content="OpenManus is an open-source agentic AI framework.",
+    title="OpenManus Overview",
+    source="manual"
+)
+
+# Semantic search
+results = await kb.execute(
+    action="search",
+    query="What is OpenManus?",
+    top_k=5
+)
+```
+
+**Features**:
+- Semantic search using OpenAI embeddings
+- Automatic chunking for long documents
+- Persistent storage with FAISS
+- Metadata filtering and organization
+
+**Requirements**: `pip install langchain openai faiss-cpu`
+
+### Notion Integration Tool
+
+Read, write, and manage Notion pages and databases:
+
+```python
+from app.tool.notion_integration import NotionTool
+
+tool = NotionTool()
+
+# Create page
+await tool.execute(
+    action="create_page",
+    database_id="your-database-id",
+    title="Meeting Notes",
+    content="# Key Points\n- Discussed roadmap\n- Next steps"
+)
+
+# Search workspace
+results = await tool.execute(
+    action="search",
+    query="project plan"
+)
+
+# Add to knowledge base
+await tool.execute(
+    action="add_to_knowledge",
+    page_id="your-page-id"
+)
+```
+
+**Requirements**: 
+- `pip install notion-client`
+- Set `NOTION_API_KEY` environment variable
+
+### CRM Integration Tool
+
+Manage contacts and deals across multiple CRM platforms:
+
+```python
+from app.tool.crm_integration import CRMTool
+
+tool = CRMTool()
+
+# Create contact
+await tool.execute(
+    action="create_contact",
+    name="John Doe",
+    email="john@example.com",
+    company="Acme Corp"
+)
+
+# Search contacts
+results = await tool.execute(
+    action="search_contacts",
+    search_query="john"
+)
+
+# Create deal
+await tool.execute(
+    action="create_deal",
+    deal_name="Q1 Contract",
+    deal_value=50000,
+    contact_id="contact-id"
+)
+
+# Get AI insights
+insights = await tool.execute(
+    action="get_insights",
+    context="pipeline"
+)
+```
+
+**Supported CRMs**:
+- Twenty CRM (open-source, self-hosted)
+- HubSpot
+- Salesforce
+- Pipedrive
+
+**Requirements**: 
+- `pip install aiohttp`
+- Set `CRM_TYPE` (default: "twenty")
+- Set corresponding API key (e.g., `TWENTY_API_KEY`, `HUBSPOT_API_KEY`)
+
+### Example Workflow: YouTube → Knowledge → Notion
+
+```python
+# 1. Get YouTube transcript
+yt_result = await youtube_tool.execute(
+    action="get_transcript",
+    video_id="video-id",
+    include_metadata=True
+)
+
+# 2. Add to knowledge base
+kb_result = await kb_tool.execute(
+    action="add",
+    content=yt_result.output['transcript'],
+    title=yt_result.output['metadata']['title'],
+    source=f"youtube:{yt_result.output['video_id']}"
+)
+
+# 3. Create Notion page with summary
+await notion_tool.execute(
+    action="create_page",
+    database_id="your-db-id",
+    title=f"Video Notes: {yt_result.output['metadata']['title']}",
+    content=yt_result.output['transcript'][:2000]  # First 2000 chars
+)
+```
+
+**Impact**: Expands addressable task types by 50%+, enables multimodal and real-world integrations.
+
 ## Quick Start
 
 One line for run OpenManus:

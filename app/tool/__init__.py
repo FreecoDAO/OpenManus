@@ -8,6 +8,10 @@ from app.tool.str_replace_editor import StrReplaceEditor
 from app.tool.terminate import Terminate
 from app.tool.tool_collection import ToolCollection
 from app.tool.web_search import WebSearch
+from app.tool.youtube_transcript import YouTubeTranscriptTool
+from app.tool.knowledge_base import KnowledgeBaseTool
+from app.tool.notion_integration import NotionTool
+from app.tool.crm_integration import CRMTool
 
 
 __all__ = [
@@ -21,4 +25,8 @@ __all__ = [
     "CreateChatCompletion",
     "PlanningTool",
     "Crawl4aiTool",
+    "YouTubeTranscriptTool",
+    "KnowledgeBaseTool",
+    "NotionTool",
+    "CRMTool",
 ]
