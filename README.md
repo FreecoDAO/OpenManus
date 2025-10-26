@@ -371,11 +371,17 @@ insights = await tool.execute(
 - HubSpot
 - Salesforce
 - Pipedrive
+- KeyCRM (Ukrainian CRM platform)
 
 **Requirements**: 
 - `pip install aiohttp`
-- Set `CRM_TYPE` (default: "twenty")
-- Set corresponding API key (e.g., `TWENTY_API_KEY`, `HUBSPOT_API_KEY`)
+- Set `CRM_TYPE` (options: "twenty", "hubspot", "salesforce", "pipedrive", "keycrm")
+- Set corresponding API key:
+  - `TWENTY_API_KEY` for Twenty CRM
+  - `HUBSPOT_API_KEY` for HubSpot
+  - `SALESFORCE_ACCESS_TOKEN` for Salesforce
+  - `PIPEDRIVE_API_TOKEN` for Pipedrive
+  - `KEYCRM_API_KEY` for KeyCRM
 
 ### Example Workflow: YouTube → Knowledge → Notion
 

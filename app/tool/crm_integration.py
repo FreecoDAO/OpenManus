@@ -35,6 +35,7 @@ class CRMTool(BaseTool):
     - HubSpot (via API)
     - Salesforce (via API)
     - Pipedrive (via API)
+    - KeyCRM (Ukrainian CRM, via REST API)
     
     Use cases:
     - Automatically log customer interactions
@@ -57,13 +58,14 @@ class CRMTool(BaseTool):
     - HubSpot: REST API v3
     - Salesforce: REST API v58.0
     - Pipedrive: REST API v1
+    - KeyCRM: REST API v1 (https://openapi.keycrm.app/v1)
     - Authentication: API keys/tokens via environment variables
     """
     
     name: str = "crm"
     description: str = (
         "CRM integration for managing contacts, deals, and customer interactions. "
-        "Supports Twenty CRM, HubSpot, Salesforce, Pipedrive. "
+        "Supports Twenty CRM, HubSpot, Salesforce, Pipedrive, KeyCRM. "
         "Create/update contacts, manage deals, track interactions, view pipeline, generate insights. "
         "Requires CRM_TYPE and corresponding API credentials in environment variables."
     )
@@ -177,6 +179,11 @@ class CRMTool(BaseTool):
             self.api_url = "https://api.pipedrive.com/v1"
             self.api_key = os.getenv("PIPEDRIVE_API_TOKEN")
             logger.info("Initialized Pipedrive CRM client")
+        
+        elif self.crm_type == "keycrm":
+            self.api_url = "https://openapi.keycrm.app/v1"
+            self.api_key = os.getenv("KEYCRM_API_KEY")
+            logger.info("Initialized KeyCRM client")
         
         else:
             logger.warning(f"Unknown CRM type: {self.crm_type}. Defaulting to Twenty CRM.")
@@ -417,6 +424,199 @@ class CRMTool(BaseTool):
         result = await self._rest_request("POST", "/crm/v3/objects/contacts/search", data=data)
         return result.get('results', [])
     
+# KeyCRM-specific methods to be added to crm_integration.py
+
+# Add these methods after the HubSpot methods (around line 425)
+
+    # ==================== KeyCRM Methods ====================
+    
+    async def _keycrm_create_contact(
+        self,
+        name: str,
+        email: Optional[str] = None,
+        phone: Optional[str] = None,
+        company: Optional[str] = None
+    ) -> Dict:
+        """
+        Create contact (buyer) in KeyCRM.
+        
+        KeyCRM API: POST /buyer
+        Docs: https://docs.keycrm.app/
+        """
+        data = {
+            "full_name": name,
+            "email": email,
+            "phone": phone
+        }
+        
+        # Remove None values
+        data = {k: v for k, v in data.items() if v is not None}
+        
+        result = await self._rest_request(
+            "POST",
+            f"{self.api_url}/buyer",
+            data=data
+        )
+        
+        return result
+    
+    async def _keycrm_search_contacts(self, search_query: str) -> List[Dict]:
+        """
+        Search contacts (buyers) in KeyCRM.
+        
+        KeyCRM API: GET /buyer with filters
+        """
+        params = {
+            "search": search_query,
+            "limit": 50
+        }
+        
+        result = await self._rest_request(
+            "GET",
+            f"{self.api_url}/buyer",
+            params=params
+        )
+        
+        # KeyCRM returns paginated data
+        return result.get('data', [])
+    
+    async def _keycrm_get_contact(self, contact_id: str) -> Dict:
+        """
+        Get contact (buyer) by ID in KeyCRM.
+        
+        KeyCRM API: GET /buyer/{buyerId}
+        """
+        result = await self._rest_request(
+            "GET",
+            f"{self.api_url}/buyer/{contact_id}"
+        )
+        
+        return result
+    
+    async def _keycrm_update_contact(
+        self,
+        contact_id: str,
+        **kwargs
+    ) -> Dict:
+        """
+        Update contact (buyer) in KeyCRM.
+        
+        KeyCRM API: PUT /buyer/{buyerId}
+        """
+        # Map common fields to KeyCRM fields
+        data = {}
+        if 'name' in kwargs:
+            data['full_name'] = kwargs['name']
+        if 'email' in kwargs:
+            data['email'] = kwargs['email']
+        if 'phone' in kwargs:
+            data['phone'] = kwargs['phone']
+        
+        result = await self._rest_request(
+            "PUT",
+            f"{self.api_url}/buyer/{contact_id}",
+            data=data
+        )
+        
+        return result
+    
+    async def _keycrm_create_deal(
+        self,
+        deal_name: str,
+        deal_value: Optional[float] = None,
+        contact_id: Optional[str] = None
+    ) -> Dict:
+        """
+        Create deal (order) in KeyCRM.
+        
+        KeyCRM API: POST /order
+        """
+        data = {
+            "buyer_comment": deal_name,
+        }
+        
+        if deal_value:
+            data["total_price"] = deal_value
+        
+        if contact_id:
+            data["buyer_id"] = int(contact_id)
+        
+        result = await self._rest_request(
+            "POST",
+            f"{self.api_url}/order",
+            data=data
+        )
+        
+        return result
+    
+    async def _keycrm_get_deal(self, deal_id: str) -> Dict:
+        """
+        Get deal (order) by ID in KeyCRM.
+        
+        KeyCRM API: GET /order/{orderId}
+        """
+        result = await self._rest_request(
+            "GET",
+            f"{self.api_url}/order/{deal_id}"
+        )
+        
+        return result
+    
+    async def _keycrm_update_deal(
+        self,
+        deal_id: str,
+        **kwargs
+    ) -> Dict:
+        """
+        Update deal (order) in KeyCRM.
+        
+        KeyCRM API: PUT /order/{orderId}
+        """
+        data = {}
+        if 'deal_name' in kwargs:
+            data['buyer_comment'] = kwargs['deal_name']
+        if 'deal_value' in kwargs:
+            data['total_price'] = kwargs['deal_value']
+        if 'status' in kwargs:
+            data['status_id'] = kwargs['status']
+        
+        result = await self._rest_request(
+            "PUT",
+            f"{self.api_url}/order/{deal_id}",
+            data=data
+        )
+        
+        return result
+    
+    async def _keycrm_get_pipeline(self) -> Dict:
+        """
+        Get pipeline (orders list) from KeyCRM.
+        
+        KeyCRM API: GET /order
+        """
+        result = await self._rest_request(
+            "GET",
+            f"{self.api_url}/order",
+            params={"limit": 100}
+        )
+        
+        orders = result.get('data', [])
+        
+        # Group by status
+        pipeline = {}
+        for order in orders:
+            status = order.get('status', {}).get('name', 'Unknown')
+            if status not in pipeline:
+                pipeline[status] = []
+            pipeline[status].append(order)
+        
+        return {
+            "total_orders": len(orders),
+            "pipeline": pipeline,
+            "statuses": list(pipeline.keys())
+        }
+
+
     # ==================== Unified Interface Methods ====================
     
     async def _create_contact(self, **kwargs) -> Dict:
@@ -425,6 +625,8 @@ class CRMTool(BaseTool):
             return await self._twenty_create_contact(**kwargs)
         elif self.crm_type == "hubspot":
             return await self._hubspot_create_contact(**kwargs)
+        elif self.crm_type == "keycrm":
+            return await self._keycrm_create_contact(**kwargs)
         else:
             raise Exception(f"create_contact not implemented for {self.crm_type}")
     
@@ -434,6 +636,8 @@ class CRMTool(BaseTool):
             return await self._twenty_search_contacts(search_query)
         elif self.crm_type == "hubspot":
             return await self._hubspot_search_contacts(search_query)
+        elif self.crm_type == "keycrm":
+            return await self._keycrm_search_contacts(search_query)
         else:
             raise Exception(f"search_contacts not implemented for {self.crm_type}")
     
@@ -441,6 +645,8 @@ class CRMTool(BaseTool):
         """Create deal (unified interface)."""
         if self.crm_type == "twenty":
             return await self._twenty_create_deal(**kwargs)
+        elif self.crm_type == "keycrm":
+            return await self._keycrm_create_deal(**kwargs)
         else:
             raise Exception(f"create_deal not implemented for {self.crm_type}")
     
