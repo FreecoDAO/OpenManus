@@ -21,7 +21,21 @@ It's a simple implementation, so we welcome any suggestions, contributions, and 
 
 Enjoy your own agent with OpenManus!
 
-We're also excited to introduce [OpenManus-RL](https://github.com/OpenManus/OpenManus-RL), an open-source project dedicated to reinforcement learning (RL)- based (such as GRPO) tuning methods for LLM agents, developed collaboratively by researchers from UIUC and OpenManus.
+We're also excited to introduce# FreEco.ai Platform (Enhanced OpenManus)
+
+**AI-Powered Vegan Wellness Coach & Personal Organic Shopping Assistant**
+
+> Built on OpenManus with advanced multi-model orchestration, planning, and multimodal capabilities.
+
+---
+
+## 🌱 About FreEco.ai
+
+FreEco.ai combines cutting-edge AI agent technology with wellness coaching and intelligent shopping assistance for the vegan and organic lifestyle community. See [FREECO_AI_README.md](FREECO_AI_README.md) for the full FreEco.ai overview.
+
+---
+
+# OpenManus (Technical Documentation)-RL](https://github.com/OpenManus/OpenManus-RL), an open-source project dedicated to reinforcement learning (RL)- based (such as GRPO) tuning methods for LLM agents, developed collaboratively by researchers from UIUC and OpenManus.
 
 ## Project Demo
 
