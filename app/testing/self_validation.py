@@ -14,16 +14,18 @@ Part of Self-Testing & Validation System
 """
 
 import logging
-from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
+from typing import Any, Dict, List
+
 
 logger = logging.getLogger(__name__)
 
 
 class ValidationStatus(Enum):
     """Validation status"""
+
     PASS = "pass"
     WARN = "warn"
     FAIL = "fail"
@@ -33,13 +35,14 @@ class ValidationStatus(Enum):
 @dataclass
 class ValidationCheck:
     """Individual validation check"""
+
     name: str
     category: str  # health, security, performance, ethics
     status: ValidationStatus
     message: str
     details: Dict[str, Any] = field(default_factory=dict)
     timestamp: datetime = field(default_factory=datetime.now)
-    
+
     def to_dict(self) -> dict:
         """Convert to dictionary"""
         return {
@@ -55,13 +58,14 @@ class ValidationCheck:
 @dataclass
 class HealthReport:
     """System health report"""
+
     overall_status: ValidationStatus
     checks: List[ValidationCheck]
     passed: int
     warned: int
     failed: int
     timestamp: datetime
-    
+
     def to_dict(self) -> dict:
         """Convert to dictionary"""
         return {
@@ -73,7 +77,7 @@ class HealthReport:
             "timestamp": self.timestamp.isoformat(),
             "checks": [c.to_dict() for c in self.checks],
         }
-    
+
     def __str__(self) -> str:
         return (
             f"Health Report ({self.overall_status.value.upper()})\n"
@@ -86,6 +90,7 @@ class HealthReport:
 @dataclass
 class ValidationReport:
     """Comprehensive validation report"""
+
     health_report: HealthReport
     security_score: float  # 0-100
     performance_score: float  # 0-100
@@ -93,7 +98,7 @@ class ValidationReport:
     overall_score: float  # 0-100
     recommendations: List[str]
     timestamp: datetime
-    
+
     def to_dict(self) -> dict:
         """Convert to dictionary"""
         return {
@@ -107,7 +112,7 @@ class ValidationReport:
             "recommendations": self.recommendations,
             "timestamp": self.timestamp.isoformat(),
         }
-    
+
     def __str__(self) -> str:
         return (
             f"=== FreEco.ai Validation Report ===\n\n"
@@ -124,7 +129,7 @@ class ValidationReport:
 class SelfValidationSystem:
     """
     Comprehensive self-validation system
-    
+
     Features:
     - Health checks for all components
     - Security vulnerability scanning
@@ -132,45 +137,43 @@ class SelfValidationSystem:
     - Ethics compliance verification
     - Automated recommendations
     - Continuous validation
-    
+
     Example:
         validator = SelfValidationSystem()
-        
+
         # Run full validation
         report = validator.validate_all()
         print(report)
-        
+
         # Run specific checks
         health = validator.health_check()
         security = validator.security_audit()
     """
-    
+
     def __init__(self):
         """Initialize self-validation system"""
         self.validation_history: List[ValidationReport] = []
-    
+
     def validate_all(self) -> ValidationReport:
         """
         Run all validation checks
-        
+
         Returns:
             ValidationReport with comprehensive results
         """
         logger.info("Starting comprehensive validation...")
-        
+
         # Run all checks
         health_report = self.health_check()
         security_score = self._security_audit_score()
         performance_score = self._performance_audit_score()
         ethics_score = self._ethics_audit_score()
-        
+
         # Calculate overall score
         overall_score = (
-            security_score * 0.35 +
-            performance_score * 0.25 +
-            ethics_score * 0.40
+            security_score * 0.35 + performance_score * 0.25 + ethics_score * 0.40
         )
-        
+
         # Generate recommendations
         recommendations = self._generate_recommendations(
             health_report,
@@ -178,7 +181,7 @@ class SelfValidationSystem:
             performance_score,
             ethics_score,
         )
-        
+
         # Create report
         report = ValidationReport(
             health_report=health_report,
@@ -189,46 +192,46 @@ class SelfValidationSystem:
             recommendations=recommendations,
             timestamp=datetime.now(),
         )
-        
+
         # Save to history
         self.validation_history.append(report)
-        
+
         logger.info(f"Validation complete. Overall score: {overall_score:.1f}/100")
-        
+
         return report
-    
+
     def health_check(self) -> HealthReport:
         """
         Perform system health checks
-        
+
         Returns:
             HealthReport with health status
         """
         checks = []
-        
+
         # Check stability module
         checks.append(self._check_stability_module())
-        
+
         # Check performance module
         checks.append(self._check_performance_module())
-        
+
         # Check security module
         checks.append(self._check_security_module())
-        
+
         # Check ethics module
         checks.append(self._check_ethics_module())
-        
+
         # Check LLM connectivity
         checks.append(self._check_llm_connectivity())
-        
+
         # Check file system
         checks.append(self._check_file_system())
-        
+
         # Count results
         passed = sum(1 for c in checks if c.status == ValidationStatus.PASS)
         warned = sum(1 for c in checks if c.status == ValidationStatus.WARN)
         failed = sum(1 for c in checks if c.status == ValidationStatus.FAIL)
-        
+
         # Determine overall status
         if failed > 0:
             overall_status = ValidationStatus.FAIL
@@ -236,7 +239,7 @@ class SelfValidationSystem:
             overall_status = ValidationStatus.WARN
         else:
             overall_status = ValidationStatus.PASS
-        
+
         return HealthReport(
             overall_status=overall_status,
             checks=checks,
@@ -245,27 +248,35 @@ class SelfValidationSystem:
             failed=failed,
             timestamp=datetime.now(),
         )
-    
+
     def _check_stability_module(self) -> ValidationCheck:
         """Check stability module health"""
         try:
             from app.stability import (
-                RetryManager, GracefulDegradation, ErrorRecoverySystem
+                ErrorRecoverySystem,
+                GracefulDegradation,
+                RetryManager,
             )
-            
+
             # Test basic functionality
-            retry_mgr = RetryManager()
-            degradation = GracefulDegradation()
-            recovery = ErrorRecoverySystem()
-            
+            RetryManager()
+            GracefulDegradation()
+            ErrorRecoverySystem()
+
             return ValidationCheck(
                 name="Stability Module",
                 category="health",
                 status=ValidationStatus.PASS,
                 message="Stability module is healthy",
-                details={"components": ["RetryManager", "GracefulDegradation", "ErrorRecoverySystem"]},
+                details={
+                    "components": [
+                        "RetryManager",
+                        "GracefulDegradation",
+                        "ErrorRecoverySystem",
+                    ]
+                },
             )
-        
+
         except Exception as e:
             return ValidationCheck(
                 name="Stability Module",
@@ -273,18 +284,18 @@ class SelfValidationSystem:
                 status=ValidationStatus.FAIL,
                 message=f"Stability module failed: {e}",
             )
-    
+
     def _check_performance_module(self) -> ValidationCheck:
         """Check performance module health"""
         try:
-            from app.performance import PerformanceOptimizer, MonitoringSystem
-            
+            from app.performance import MonitoringSystem, PerformanceOptimizer
+
             optimizer = PerformanceOptimizer()
-            monitor = MonitoringSystem()
-            
+            MonitoringSystem()
+
             # Check cache
             cache_stats = optimizer.get_cache_stats()
-            
+
             return ValidationCheck(
                 name="Performance Module",
                 category="health",
@@ -292,7 +303,7 @@ class SelfValidationSystem:
                 message="Performance module is healthy",
                 details={"cache_stats": cache_stats},
             )
-        
+
         except Exception as e:
             return ValidationCheck(
                 name="Performance Module",
@@ -300,19 +311,19 @@ class SelfValidationSystem:
                 status=ValidationStatus.FAIL,
                 message=f"Performance module failed: {e}",
             )
-    
+
     def _check_security_module(self) -> ValidationCheck:
         """Check security module health"""
         try:
-            from app.security import SecurityManager, AntiHackingSystem
-            
-            security = SecurityManager()
+            from app.security import AntiHackingSystem, SecurityManager
+
+            SecurityManager()
             anti_hack = AntiHackingSystem()
-            
+
             # Test basic functionality
             test_input = "SELECT * FROM users"
-            sanitized = anti_hack.prevent_sql_injection(test_input)
-            
+            anti_hack.prevent_sql_injection(test_input)
+
             return ValidationCheck(
                 name="Security Module",
                 category="health",
@@ -320,7 +331,7 @@ class SelfValidationSystem:
                 message="Security module is healthy",
                 details={"sql_injection_prevention": "working"},
             )
-        
+
         except Exception as e:
             return ValidationCheck(
                 name="Security Module",
@@ -328,18 +339,18 @@ class SelfValidationSystem:
                 status=ValidationStatus.FAIL,
                 message=f"Security module failed: {e}",
             )
-    
+
     def _check_ethics_module(self) -> ValidationCheck:
         """Check ethics module health"""
         try:
-            from app.ethics import FreEcoLawsEnforcer, EcologicalSystem
-            
+            from app.ethics import EcologicalSystem, FreEcoLawsEnforcer
+
             laws = FreEcoLawsEnforcer()
-            eco = EcologicalSystem()
-            
+            EcologicalSystem()
+
             # Test basic functionality
             approved, benchmark, _ = laws.evaluate_action("Find vegan recipes")
-            
+
             if not approved:
                 return ValidationCheck(
                     name="Ethics Module",
@@ -347,7 +358,7 @@ class SelfValidationSystem:
                     status=ValidationStatus.WARN,
                     message="Ethics module working but may be too strict",
                 )
-            
+
             return ValidationCheck(
                 name="Ethics Module",
                 category="health",
@@ -355,7 +366,7 @@ class SelfValidationSystem:
                 message="Ethics module is healthy",
                 details={"benchmark_score": benchmark.total_score()},
             )
-        
+
         except Exception as e:
             return ValidationCheck(
                 name="Ethics Module",
@@ -363,16 +374,16 @@ class SelfValidationSystem:
                 status=ValidationStatus.FAIL,
                 message=f"Ethics module failed: {e}",
             )
-    
+
     def _check_llm_connectivity(self) -> ValidationCheck:
         """Check LLM connectivity"""
         try:
             # This would test actual LLM connectivity
             # For now, just check if config exists
             import os
-            
+
             has_openai_key = bool(os.getenv("OPENAI_API_KEY"))
-            
+
             if has_openai_key:
                 return ValidationCheck(
                     name="LLM Connectivity",
@@ -387,7 +398,7 @@ class SelfValidationSystem:
                     status=ValidationStatus.WARN,
                     message="No LLM API keys found",
                 )
-        
+
         except Exception as e:
             return ValidationCheck(
                 name="LLM Connectivity",
@@ -395,17 +406,16 @@ class SelfValidationSystem:
                 status=ValidationStatus.FAIL,
                 message=f"LLM check failed: {e}",
             )
-    
+
     def _check_file_system(self) -> ValidationCheck:
         """Check file system health"""
         try:
-            import os
             import psutil
-            
+
             # Check disk space
-            disk = psutil.disk_usage('/')
+            disk = psutil.disk_usage("/")
             free_percent = (disk.free / disk.total) * 100
-            
+
             if free_percent < 10:
                 status = ValidationStatus.FAIL
                 message = f"Low disk space: {free_percent:.1f}% free"
@@ -415,7 +425,7 @@ class SelfValidationSystem:
             else:
                 status = ValidationStatus.PASS
                 message = f"Disk space healthy: {free_percent:.1f}% free"
-            
+
             return ValidationCheck(
                 name="File System",
                 category="health",
@@ -423,7 +433,7 @@ class SelfValidationSystem:
                 message=message,
                 details={"free_percent": free_percent},
             )
-        
+
         except Exception as e:
             return ValidationCheck(
                 name="File System",
@@ -431,107 +441,106 @@ class SelfValidationSystem:
                 status=ValidationStatus.FAIL,
                 message=f"File system check failed: {e}",
             )
-    
+
     def _security_audit_score(self) -> float:
         """Calculate security audit score"""
         score = 100.0
-        
+
         try:
-            from app.security import default_security, default_anti_hacking
-            
+            from app.security import default_anti_hacking, default_security
+
             # Check for security events
             audit_log = default_security.get_audit_log(hours=24)
             high_severity_events = [
-                e for e in audit_log
-                if e.threat_level.value in ["high", "critical"]
+                e for e in audit_log if e.threat_level.value in ["high", "critical"]
             ]
-            
+
             # Deduct points for security events
             score -= len(high_severity_events) * 5
-            
+
             # Check for blocked IPs
             blocked_ips = default_anti_hacking.get_blocked_ips()
             if len(blocked_ips) > 10:
                 score -= 10
-            
+
             # Check intrusion log
             intrusions = default_anti_hacking.get_intrusion_log(hours=24)
             score -= len(intrusions) * 2
-        
+
         except Exception as e:
             logger.error(f"Security audit failed: {e}")
             score = 50.0  # Default to medium score on error
-        
+
         return max(0.0, min(100.0, score))
-    
+
     def _performance_audit_score(self) -> float:
         """Calculate performance audit score"""
         score = 100.0
-        
+
         try:
-            from app.performance import default_optimizer, default_monitor
-            
+            from app.performance import default_monitor, default_optimizer
+
             # Check cache hit rate
             cache_stats = default_optimizer.get_cache_stats()
             hit_rate = cache_stats.get("hit_rate", 0.0)
-            
+
             if hit_rate < 0.5:
                 score -= 20
             elif hit_rate < 0.7:
                 score -= 10
-            
+
             # Check system metrics
             metrics = default_monitor.collect_metrics()
-            
+
             if metrics.cpu_percent > 90:
                 score -= 15
             elif metrics.cpu_percent > 75:
                 score -= 5
-            
+
             if metrics.memory_percent > 90:
                 score -= 15
             elif metrics.memory_percent > 75:
                 score -= 5
-        
+
         except Exception as e:
             logger.error(f"Performance audit failed: {e}")
             score = 70.0  # Default to good score on error
-        
+
         return max(0.0, min(100.0, score))
-    
+
     def _ethics_audit_score(self) -> float:
         """Calculate ethics audit score"""
         score = 100.0
-        
+
         try:
-            from app.ethics import default_freeco_laws, default_ecological
-            
+            from app.ethics import default_ecological, default_freeco_laws
+
             # Check evaluation stats
             stats = default_freeco_laws.get_evaluation_stats()
             approval_rate = stats.get("approval_rate", 1.0)
-            
+
             # High approval rate is good (means most actions are ethical)
             if approval_rate < 0.5:
                 score -= 30
             elif approval_rate < 0.7:
                 score -= 15
-            
+
             # Check sustainability metrics
             sustainability = default_ecological.get_sustainability_metrics()
             co2_per_request = sustainability.co2_per_request()
-            
+
             # Penalize high carbon footprint
             if co2_per_request > 100:  # > 100g per request
                 score -= 20
             elif co2_per_request > 50:
                 score -= 10
-        
+
         except Exception as e:
             logger.error(f"Ethics audit failed: {e}")
             score = 80.0  # Default to good score on error
-        
+
         return max(0.0, min(100.0, score))
-    
+
     def _generate_recommendations(
         self,
         health: HealthReport,
@@ -541,13 +550,13 @@ class SelfValidationSystem:
     ) -> List[str]:
         """Generate recommendations based on validation results"""
         recommendations = []
-        
+
         # Health recommendations
         if health.failed > 0:
             recommendations.append(
                 f"⚠️ {health.failed} health check(s) failed. Review system logs and fix critical issues."
             )
-        
+
         # Security recommendations
         if security_score < 70:
             recommendations.append(
@@ -557,7 +566,7 @@ class SelfValidationSystem:
             recommendations.append(
                 "🔒 Security could be improved. Consider implementing additional security measures."
             )
-        
+
         # Performance recommendations
         if performance_score < 70:
             recommendations.append(
@@ -567,7 +576,7 @@ class SelfValidationSystem:
             recommendations.append(
                 "⚡ Performance could be improved. Review cache hit rates and system resource usage."
             )
-        
+
         # Ethics recommendations
         if ethics_score < 70:
             recommendations.append(
@@ -577,16 +586,15 @@ class SelfValidationSystem:
             recommendations.append(
                 "🌱 Ethics could be improved. Focus on reducing carbon footprint and improving sustainability."
             )
-        
+
         # General recommendations
         if not recommendations:
             recommendations.append(
                 "✅ All systems are healthy! Continue monitoring and maintaining current practices."
             )
-        
+
         return recommendations
 
 
 # Global self-validation instance
 default_validator = SelfValidationSystem()
-

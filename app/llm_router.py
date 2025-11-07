@@ -9,15 +9,15 @@ from app.schema import Message
 class LLMRouter:
     """
     FreEco.ai Multi-Model LLM Router.
-    
+
     Orchestrates multiple LLM models based on task type for optimal performance.
     Part of Enhancement #1: Multi-Model LLM Orchestration.
-    
+
     Manages a pool of LLM instances, each configured for specific tasks:
     - 'planning': High-capability model for complex reasoning (e.g., Claude 3.5 Sonnet)
     - 'executor': Fast, reliable model for task execution (e.g., GPT-4o-mini)
     - 'default': Fallback model for general use
-    
+
     Part of the FreEco.ai Platform.
     """
 
@@ -102,4 +102,3 @@ class LLMRouter:
 
 # Global instance of the router for easy access
 llm_router = LLMRouter()
-

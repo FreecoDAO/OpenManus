@@ -3,8 +3,9 @@ FreEco.ai Platform - Ethics Module
 Enhanced OpenManus with comprehensive ethical framework
 """
 
-from .freeco_laws import FreEcoLawsEnforcer, default_freeco_laws, FreEcoBenchmark
 from .ecological_principles import EcologicalSystem, default_ecological
+from .freeco_laws import FreEcoBenchmark, FreEcoLawsEnforcer, default_freeco_laws
+
 
 __all__ = [
     "FreEcoLawsEnforcer",
@@ -13,4 +14,3 @@ __all__ = [
     "EcologicalSystem",
     "default_ecological",
 ]
-

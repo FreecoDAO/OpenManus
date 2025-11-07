@@ -338,7 +338,7 @@ await tool.execute(
 )
 ```
 
-**Requirements**: 
+**Requirements**:
 - `pip install notion-client`
 - Set `NOTION_API_KEY` environment variable
 
@@ -387,7 +387,7 @@ insights = await tool.execute(
 - Pipedrive
 - KeyCRM (Ukrainian CRM platform)
 
-**Requirements**: 
+**Requirements**:
 - `pip install aiohttp`
 - Set `CRM_TYPE` (options: "twenty", "hubspot", "salesforce", "pipedrive", "keycrm")
 - Set corresponding API key:

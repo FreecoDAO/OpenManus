@@ -26,7 +26,7 @@ ADVANCED_PLANNING_SYSTEM_PROMPT = """You are an expert Planning Agent with advan
 
 Your role is to create comprehensive, robust plans that maximize success probability through:
 
-**1. Deep Analysis** 
+**1. Deep Analysis**
    - Understand the full scope and context of the task
    - Identify hidden requirements and edge cases
    - Consider resource constraints and dependencies
@@ -351,53 +351,54 @@ Build verification into every critical step.
 # HELPER FUNCTIONS FOR PROMPT FORMATTING
 # ============================================================================
 
+
 def format_plan_status(plan_data: dict) -> str:
     """
     Format plan data into a human-readable status summary.
-    
+
     Args:
         plan_data: Dict with keys like 'steps', 'step_statuses', 'title'
-        
+
     Returns:
         Formatted string summarizing plan status
     """
     if not plan_data:
         return "No active plan"
-    
-    steps = plan_data.get('steps', [])
-    statuses = plan_data.get('step_statuses', [])
-    title = plan_data.get('title', 'Untitled Plan')
-    
+
+    steps = plan_data.get("steps", [])
+    statuses = plan_data.get("step_statuses", [])
+    title = plan_data.get("title", "Untitled Plan")
+
     status_lines = [f"**Plan:** {title}", "**Steps:**"]
-    
+
     status_marks = {
-        'completed': '[✓]',
-        'in_progress': '[→]',
-        'blocked': '[!]',
-        'not_started': '[ ]'
+        "completed": "[✓]",
+        "in_progress": "[→]",
+        "blocked": "[!]",
+        "not_started": "[ ]",
     }
-    
+
     for i, step in enumerate(steps):
-        status = statuses[i] if i < len(statuses) else 'not_started'
-        mark = status_marks.get(status, '[ ]')
+        status = statuses[i] if i < len(statuses) else "not_started"
+        mark = status_marks.get(status, "[ ]")
         status_lines.append(f"{i+1}. {mark} {step}")
-    
+
     return "\n".join(status_lines)
 
 
 def format_reflections(reflections: list) -> str:
     """
     Format reflection objects into a readable list.
-    
+
     Args:
         reflections: List of Reflection objects
-        
+
     Returns:
         Formatted string with numbered reflections
     """
     if not reflections:
         return "No relevant lessons from past executions."
-    
+
     lines = []
     for i, reflection in enumerate(reflections, 1):
         confidence_bar = "█" * int(reflection.confidence * 10)
@@ -405,27 +406,27 @@ def format_reflections(reflections: list) -> str:
             f"{i}. [{reflection.category.upper()}] {reflection.insight}\n"
             f"   Confidence: {confidence_bar} ({reflection.confidence:.1%})"
         )
-    
+
     return "\n\n".join(lines)
 
 
 def format_recent_outcomes(execution_records: list, max_recent: int = 3) -> str:
     """
     Format recent execution outcomes for context.
-    
+
     Args:
         execution_records: List of ExecutionRecord objects
         max_recent: Maximum number of recent records to include
-        
+
     Returns:
         Formatted string with recent outcomes
     """
     if not execution_records:
         return "No recent execution history."
-    
+
     recent = execution_records[-max_recent:]
     lines = []
-    
+
     for i, record in enumerate(recent, 1):
         status = "✓ SUCCESS" if record.success else "✗ FAILED"
         lines.append(
@@ -433,7 +434,7 @@ def format_recent_outcomes(execution_records: list, max_recent: int = 3) -> str:
             f"Task: {record.task_description[:80]}...\n"
             f"Outcome: {record.outcome[:100]}..."
         )
-    
+
     return "\n\n".join(lines)
 
 
@@ -441,23 +442,22 @@ def format_recent_outcomes(execution_records: list, max_recent: int = 3) -> str:
 # PROMPT SELECTION HELPER
 # ============================================================================
 
+
 def select_planning_prompt(
-    strategy: str = "advanced",
-    task_description: str = "",
-    **kwargs
+    strategy: str = "advanced", task_description: str = "", **kwargs
 ) -> str:
     """
     Select and format the appropriate planning prompt based on strategy.
-    
+
     Args:
-        strategy: One of "advanced", "tot", "reflection", "dependency", 
+        strategy: One of "advanced", "tot", "reflection", "dependency",
                  "role_playing", "concise", "error_anticipation", "verification"
         task_description: The task to plan for
         **kwargs: Additional parameters for specific prompt types
-        
+
     Returns:
         Formatted prompt string
-    
+
     Example:
         prompt = select_planning_prompt(
             strategy="reflection",
@@ -473,15 +473,14 @@ def select_planning_prompt(
         "role_playing": ROLE_PLAYING_PLANNING_PROMPT,
         "concise": CONCISE_SUMMARY_PLANNING_PROMPT,
         "error_anticipation": ERROR_ANTICIPATION_PLANNING_PROMPT,
-        "verification": VERIFICATION_FOCUSED_PLANNING_PROMPT
+        "verification": VERIFICATION_FOCUSED_PLANNING_PROMPT,
     }
-    
+
     prompt_template = prompts.get(strategy, ADVANCED_PLANNING_SYSTEM_PROMPT)
-    
+
     # Format with provided kwargs
     try:
         return prompt_template.format(task_description=task_description, **kwargs)
-    except KeyError as e:
+    except KeyError:
         # Missing required parameter
         return prompt_template
-

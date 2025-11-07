@@ -1,3 +1,4 @@
+import asyncio
 import math
 from typing import Dict, List, Optional, Union
 
@@ -22,7 +23,6 @@ from app.bedrock import BedrockClient
 from app.config import LLMSettings, config
 from app.exceptions import TokenLimitExceeded
 from app.logger import logger  # Assuming a logger is set up in your app
-import asyncio
 from app.schema import (
     ROLE_VALUES,
     TOOL_CHOICE_TYPE,

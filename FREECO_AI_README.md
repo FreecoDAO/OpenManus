@@ -342,4 +342,3 @@ Built on top of:
 **FreEco.ai - Empowering Vegan Wellness Through AI** 🌱🤖
 
 *Version 1.0.0 | October 2025*
-

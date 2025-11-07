@@ -389,17 +389,16 @@ python run_mcp_server.py
 
 With FreEco.ai as an MCP server, you can:
 
-✅ Use YouTube transcripts in your AI conversations  
-✅ Build a personal knowledge base with RAG  
-✅ Automate Notion workflows  
-✅ Manage CRM from any MCP client  
-✅ Chain complex workflows across tools  
+✅ Use YouTube transcripts in your AI conversations
+✅ Build a personal knowledge base with RAG
+✅ Automate Notion workflows
+✅ Manage CRM from any MCP client
+✅ Chain complex workflows across tools
 
 **Welcome to the FreEco.ai ecosystem!** 🌱🤖
 
 ---
 
-**Version**: 1.0.0  
-**Last Updated**: October 26, 2025  
+**Version**: 1.0.0
+**Last Updated**: October 26, 2025
 **Maintained by**: FreEco.ai Team
-
