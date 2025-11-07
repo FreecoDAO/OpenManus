@@ -1,0 +1,24 @@
+{
+  "doc1": {
+    "id": "doc1",
+    "title": "Python Guide",
+    "content": "# Python Basics\nPython is great!",
+    "category": "guides",
+    "doc_type": "markdown",
+    "created_at": "2025-11-07T10:12:52.808397",
+    "updated_at": "2025-11-07T10:12:52.808400",
+    "tags": [],
+    "size": 32
+  },
+  "doc2": {
+    "id": "doc2",
+    "title": "API Notes",
+    "content": "REST API design patterns",
+    "category": "notes",
+    "doc_type": "markdown",
+    "created_at": "2025-11-07T10:12:52.808506",
+    "updated_at": "2025-11-07T10:12:52.808507",
+    "tags": [],
+    "size": 24
+  }
+}
