@@ -1,45 +1,33 @@
-// FreEco.AI GUI Application
-
+// FreEco.AI GUI - Complete Application Logic
 const API_BASE = '/api';
 
-// ===== STATE =====
-
-let currentTab = 'chat';
-let isDarkTheme = localStorage.getItem('theme') === 'dark';
-
-// ===== INITIALIZATION =====
-
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
-    initEventListeners();
+    setupEventListeners();
     loadInitialData();
-    checkHealth();
 });
 
 // ===== THEME =====
-
 function initTheme() {
-    if (isDarkTheme) {
+    if (localStorage.getItem('theme') === 'dark') {
         document.body.classList.add('dark-theme');
-        document.getElementById('themeToggle').textContent = '☀️';
     }
 }
 
-document.getElementById('themeToggle').addEventListener('click', () => {
-    isDarkTheme = !isDarkTheme;
+function toggleTheme() {
     document.body.classList.toggle('dark-theme');
-    document.getElementById('themeToggle').textContent = isDarkTheme ? '☀️' : '🌙';
-    localStorage.setItem('theme', isDarkTheme ? 'dark' : 'light');
-});
+    localStorage.setItem('theme', document.body.classList.contains('dark-theme') ? 'dark' : 'light');
+}
 
-// ===== EVENT LISTENERS =====
+// ===== EVENT SETUP =====
+function setupEventListeners() {
+    // Theme
+    document.getElementById('themeToggle').addEventListener('click', toggleTheme);
 
-function initEventListeners() {
-    // Tab navigation
+    // Tabs
     document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            switchTab(e.target.dataset.tab);
-        });
+        btn.addEventListener('click', (e) => switchTab(e.target.dataset.tab));
     });
 
     // Chat
@@ -49,435 +37,384 @@ function initEventListeners() {
     });
 
     // Tasks
-    document.getElementById('newTaskBtn').addEventListener('click', () => {
-        openModal('taskModal');
-    });
-    document.getElementById('taskForm').addEventListener('submit', createTask);
+    document.getElementById('newTaskBtn').addEventListener('click', () => openModal('taskModal'));
+    document.getElementById('createTaskBtn').addEventListener('click', createTask);
+    document.getElementById('cancelTaskBtn').addEventListener('click', () => closeModal('taskModal'));
 
-    // Knowledge Base
-    document.getElementById('newDocBtn').addEventListener('click', () => {
-        openModal('docModal');
-    });
-    document.getElementById('docForm').addEventListener('submit', addDocument);
+    // Documents
+    document.getElementById('addDocBtn').addEventListener('click', () => openModal('docModal'));
+    document.getElementById('createDocBtn').addEventListener('click', createDocument);
+    document.getElementById('cancelDocBtn').addEventListener('click', () => closeModal('docModal'));
     document.getElementById('searchInput').addEventListener('input', searchDocuments);
 
     // Settings
-    document.getElementById('settingsForm').addEventListener('submit', updateSettings);
-    document.getElementById('testBtn').addEventListener('click', testConnection);
+    document.getElementById('saveSettingsBtn').addEventListener('click', saveSettings);
+    document.getElementById('resetSettingsBtn').addEventListener('click', resetSettings);
     document.getElementById('temperature').addEventListener('input', (e) => {
         document.getElementById('tempValue').textContent = e.target.value;
     });
 
-    // Modals
+    // Modal close buttons
     document.querySelectorAll('.close-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            closeModal(e.target.dataset.modal);
+            const modal = e.target.closest('.modal');
+            if (modal) closeModal(modal.id);
         });
     });
 
-    document.querySelectorAll('[data-modal]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            if (e.target.dataset.modal) {
-                closeModal(e.target.dataset.modal);
-            }
+    // Click outside modal to close
+    document.querySelectorAll('.modal').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal(modal.id);
         });
     });
 }
 
-// ===== TAB SWITCHING =====
+// ===== TABS =====
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
 
-function switchTab(tab) {
-    currentTab = tab;
+    document.getElementById(tabName).classList.add('active');
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
 
-    // Update nav buttons
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.dataset.tab === tab) {
-            btn.classList.add('active');
-        }
-    });
-
-    // Update tab content
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-    });
-    document.getElementById(`${tab}-tab`).classList.add('active');
-
-    // Load data for tab
-    if (tab === 'tasks') {
-        loadTasks();
-    } else if (tab === 'knowledge') {
-        loadDocuments();
-    } else if (tab === 'settings') {
+    if (tabName === 'tasks') loadTasks();
+    else if (tabName === 'knowledge') loadDocuments();
+    else if (tabName === 'settings') {
         loadSettings();
+        checkApiStatus();
     }
 }
 
 // ===== CHAT =====
-
 async function sendMessage() {
     const input = document.getElementById('chatInput');
     const message = input.value.trim();
-
     if (!message) return;
 
-    // Add user message to UI
-    addChatMessage('user', message);
+    addMessage(message, 'user');
     input.value = '';
 
-    // Show loading
-    showLoading(true);
-    setStatus('Sending message...');
-
     try {
-        const response = await fetch(`${API_BASE}/chat`, {
+        const res = await fetch(`${API_BASE}/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message })
         });
 
-        if (!response.ok) throw new Error('Failed to send message');
-
-        const data = await response.json();
-        addChatMessage('assistant', data.response);
-        setStatus('');
+        const data = await res.json();
+        if (data.response) {
+            addMessage(data.response, 'assistant');
+        }
     } catch (error) {
-        addChatMessage('system', `Error: ${error.message}`);
-        setStatus(`Error: ${error.message}`);
-    } finally {
-        showLoading(false);
+        addMessage(`Error: ${error.message}`, 'error');
     }
 }
 
-function addChatMessage(role, text) {
+function addMessage(text, sender) {
     const messagesDiv = document.getElementById('chatMessages');
-    const messageEl = document.createElement('div');
-    messageEl.className = `message ${role}`;
-    messageEl.innerHTML = `<p>${escapeHtml(text)}</p>`;
-    messagesDiv.appendChild(messageEl);
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message message-${sender}`;
+    messageDiv.textContent = text;
+    messagesDiv.appendChild(messageDiv);
     messagesDiv.scrollTop = messagesDiv.scrollHeight;
 }
 
-function setStatus(text) {
-    document.getElementById('chatStatus').textContent = text;
-}
-
 // ===== TASKS =====
+async function createTask() {
+    const title = document.getElementById('taskTitle').value.trim();
+    const desc = document.getElementById('taskDesc').value.trim();
+    const priority = document.getElementById('taskPriority').value;
+
+    if (!title) {
+        alert('Enter task title');
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API_BASE}/tasks`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, description: desc, priority })
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        closeModal('taskModal');
+        document.getElementById('taskTitle').value = '';
+        document.getElementById('taskDesc').value = '';
+        loadTasks();
+    } catch (error) {
+        alert(`Error creating task: ${error.message}`);
+    }
+}
 
 async function loadTasks() {
     try {
-        const [tasksRes, statsRes] = await Promise.all([
-            fetch(`${API_BASE}/tasks`),
-            fetch(`${API_BASE}/tasks/stats`)
-        ]);
+        const res = await fetch(`${API_BASE}/tasks`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-        const tasks = await tasksRes.json();
-        const stats = await statsRes.json();
+        const tasks = await res.json();
 
-        // Update stats
-        document.getElementById('statTotal').textContent = stats.total;
-        document.getElementById('statPending').textContent = stats.pending;
-        document.getElementById('statInProgress').textContent = stats.in_progress;
-        document.getElementById('statCompleted').textContent = stats.completed;
+        // Update statistics
+        document.getElementById('totalTasks').textContent = tasks.length;
+        document.getElementById('pendingTasks').textContent = tasks.filter(t => t.status === 'pending').length;
+        document.getElementById('inProgressTasks').textContent = tasks.filter(t => t.status === 'in_progress').length;
+        document.getElementById('completedTasks').textContent = tasks.filter(t => t.status === 'completed').length;
 
         // Render tasks
-        const taskList = document.getElementById('taskList');
-        taskList.innerHTML = '';
-
+        const list = document.getElementById('taskList');
         if (tasks.length === 0) {
-            taskList.innerHTML = '<p style="color: var(--text-secondary);">No tasks yet. Create one to get started!</p>';
+            list.innerHTML = '<div class="empty-state">No tasks yet. Create one to get started!</div>';
             return;
         }
 
-        tasks.forEach(task => {
-            const taskEl = document.createElement('div');
-            taskEl.className = 'task-item';
-            taskEl.innerHTML = `
+        list.innerHTML = tasks.map(t => `
+            <div class="task-item">
                 <div class="task-item-content">
-                    <div class="task-item-title">${escapeHtml(task.title)}</div>
-                    <div class="task-item-meta">
-                        Priority: <strong>${task.priority}</strong> |
-                        Status: <strong>${task.status}</strong>
-                    </div>
+                    <div class="task-item-title">${escapeHtml(t.title)}</div>
+                    <div class="task-item-meta">Priority: <strong>${t.priority}</strong> | Status: <strong>${t.status}</strong></div>
+                    ${t.description ? `<div class="task-item-desc">${escapeHtml(t.description)}</div>` : ''}
                 </div>
                 <div class="task-item-actions">
-                    <button onclick="updateTaskStatus('${task.id}', 'in_progress')">Start</button>
-                    <button onclick="updateTaskStatus('${task.id}', 'completed')">Complete</button>
-                    <button onclick="deleteTask('${task.id}')">Delete</button>
+                    <button class="btn-small" onclick="updateTask('${t.id}', 'in_progress')">Start</button>
+                    <button class="btn-small" onclick="updateTask('${t.id}', 'completed')">Done</button>
+                    <button class="btn-small btn-danger" onclick="deleteTask('${t.id}')">Delete</button>
                 </div>
-            `;
-            taskList.appendChild(taskEl);
-        });
+            </div>
+        `).join('');
     } catch (error) {
-        console.error('Error loading tasks:', error);
+        console.error('Load tasks error:', error);
+        document.getElementById('taskList').innerHTML = `<div class="error">Error loading tasks: ${error.message}</div>`;
     }
 }
 
-async function createTask(e) {
-    e.preventDefault();
-
-    const title = document.getElementById('taskTitle').value;
-    const description = document.getElementById('taskDesc').value;
-    const priority = document.getElementById('taskPriority').value;
-
+async function updateTask(id, status) {
     try {
-        const response = await fetch(`${API_BASE}/tasks`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ title, description, priority })
-        });
-
-        if (!response.ok) throw new Error('Failed to create task');
-
-        closeModal('taskModal');
-        document.getElementById('taskForm').reset();
-        loadTasks();
-    } catch (error) {
-        alert(`Error: ${error.message}`);
-    }
-}
-
-async function updateTaskStatus(taskId, status) {
-    try {
-        const response = await fetch(`${API_BASE}/tasks/${taskId}`, {
+        const res = await fetch(`${API_BASE}/tasks/${id}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ status })
         });
 
-        if (!response.ok) throw new Error('Failed to update task');
-
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         loadTasks();
     } catch (error) {
-        alert(`Error: ${error.message}`);
+        alert(`Error updating task: ${error.message}`);
     }
 }
 
-async function deleteTask(taskId) {
-    if (!confirm('Are you sure?')) return;
+async function deleteTask(id) {
+    if (!confirm('Delete this task?')) return;
 
     try {
-        const response = await fetch(`${API_BASE}/tasks/${taskId}`, {
+        const res = await fetch(`${API_BASE}/tasks/${id}`, {
             method: 'DELETE'
         });
 
-        if (!response.ok) throw new Error('Failed to delete task');
-
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         loadTasks();
     } catch (error) {
-        alert(`Error: ${error.message}`);
+        alert(`Error deleting task: ${error.message}`);
     }
 }
 
-// ===== KNOWLEDGE BASE =====
+// ===== DOCUMENTS =====
+async function createDocument() {
+    const title = document.getElementById('docTitle').value.trim();
+    const content = document.getElementById('docContent').value.trim();
+    const category = document.getElementById('docCategory').value;
 
-async function loadDocuments() {
-    try {
-        const [docsRes, statsRes] = await Promise.all([
-            fetch(`${API_BASE}/documents`),
-            fetch(`${API_BASE}/documents/stats`)
-        ]);
-
-        const docs = await docsRes.json();
-        const stats = await statsRes.json();
-
-        // Update stats
-        document.getElementById('statDocs').textContent = stats.total_documents;
-        document.getElementById('statSize').textContent = stats.total_size_mb + ' MB';
-
-        // Render documents
-        renderDocuments(docs);
-    } catch (error) {
-        console.error('Error loading documents:', error);
-    }
-}
-
-function renderDocuments(docs) {
-    const docList = document.getElementById('documentList');
-    docList.innerHTML = '';
-
-    if (docs.length === 0) {
-        docList.innerHTML = '<p style="color: var(--text-secondary);">No documents yet. Add one to get started!</p>';
+    if (!title || !content) {
+        alert('Enter title and content');
         return;
     }
 
-    docs.forEach(doc => {
-        const docEl = document.createElement('div');
-        docEl.className = 'document-item';
-        docEl.innerHTML = `
-            <div class="document-item-content">
-                <div class="document-item-title">${escapeHtml(doc.title)}</div>
-                <div class="document-item-meta">
-                    Category: <strong>${doc.category}</strong> |
-                    Size: <strong>${(doc.size / 1024).toFixed(2)} KB</strong>
-                </div>
-            </div>
-            <div class="document-item-actions">
-                <button onclick="deleteDocument('${doc.id}')">Delete</button>
-            </div>
-        `;
-        docList.appendChild(docEl);
-    });
-}
-
-async function addDocument(e) {
-    e.preventDefault();
-
-    const title = document.getElementById('docTitle').value;
-    const content = document.getElementById('docContent').value;
-    const category = document.getElementById('docCategory').value;
-
     try {
-        const response = await fetch(`${API_BASE}/documents`, {
+        const res = await fetch(`${API_BASE}/documents`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ title, content, category })
         });
 
-        if (!response.ok) throw new Error('Failed to add document');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
         closeModal('docModal');
-        document.getElementById('docForm').reset();
+        document.getElementById('docTitle').value = '';
+        document.getElementById('docContent').value = '';
+        document.getElementById('docCategory').value = 'general';
         loadDocuments();
     } catch (error) {
-        alert(`Error: ${error.message}`);
+        alert(`Error creating document: ${error.message}`);
     }
 }
 
-async function searchDocuments(e) {
-    const query = e.target.value.trim();
+async function loadDocuments() {
+    try {
+        const res = await fetch(`${API_BASE}/documents`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
+        const docs = await res.json();
+
+        document.getElementById('totalDocs').textContent = docs.length;
+        const size = (docs.reduce((s, d) => s + (d.size || 0), 0) / 1024 / 1024).toFixed(2);
+        document.getElementById('totalSize').textContent = `${size} MB`;
+
+        renderDocs(docs);
+    } catch (error) {
+        console.error('Load docs error:', error);
+        document.getElementById('documentList').innerHTML = `<div class="error">Error loading documents: ${error.message}</div>`;
+    }
+}
+
+function renderDocs(docs) {
+    const list = document.getElementById('documentList');
+    if (docs.length === 0) {
+        list.innerHTML = '<div class="empty-state">No documents yet. Add one to get started!</div>';
+        return;
+    }
+
+    list.innerHTML = docs.map(d => `
+        <div class="document-item">
+            <div class="document-item-content">
+                <div class="document-item-title">${escapeHtml(d.title)}</div>
+                <div class="document-item-meta">Category: <strong>${d.category}</strong> | Size: <strong>${(d.size / 1024).toFixed(2)} KB</strong></div>
+            </div>
+            <div class="document-item-actions">
+                <button class="btn-small btn-danger" onclick="deleteDocument('${d.id}')">Delete</button>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function searchDocuments() {
+    const query = document.getElementById('searchInput').value.trim();
     if (!query) {
         loadDocuments();
         return;
     }
 
     try {
-        const response = await fetch(`${API_BASE}/documents/search?q=${encodeURIComponent(query)}`);
-        const docs = await response.json();
-        renderDocuments(docs);
+        const res = await fetch(`${API_BASE}/documents/search?q=${encodeURIComponent(query)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+        const results = await res.json();
+        renderDocs(results);
     } catch (error) {
-        console.error('Error searching:', error);
+        console.error('Search error:', error);
     }
 }
 
-async function deleteDocument(docId) {
-    if (!confirm('Are you sure?')) return;
+async function deleteDocument(id) {
+    if (!confirm('Delete this document?')) return;
 
     try {
-        const response = await fetch(`${API_BASE}/documents/${docId}`, {
+        const res = await fetch(`${API_BASE}/documents/${id}`, {
             method: 'DELETE'
         });
 
-        if (!response.ok) throw new Error('Failed to delete document');
-
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         loadDocuments();
     } catch (error) {
-        alert(`Error: ${error.message}`);
+        alert(`Error deleting document: ${error.message}`);
     }
 }
 
 // ===== SETTINGS =====
-
 async function loadSettings() {
     try {
-        const response = await fetch(`${API_BASE}/settings`);
-        const settings = await response.json();
+        const res = await fetch(`${API_BASE}/settings`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-        document.getElementById('model').value = settings.minimax.model;
-        document.getElementById('temperature').value = settings.minimax.temperature;
-        document.getElementById('tempValue').textContent = settings.minimax.temperature;
-        document.getElementById('maxTokens').value = settings.minimax.max_tokens;
+        const settings = await res.json();
+        document.getElementById('apiKey').value = settings.api_key || '';
+        document.getElementById('model').value = settings.model || 'minimax-01';
+        document.getElementById('temperature').value = settings.temperature || 0.7;
+        document.getElementById('maxTokens').value = settings.max_tokens || 4096;
+        document.getElementById('tempValue').textContent = settings.temperature || 0.7;
     } catch (error) {
-        console.error('Error loading settings:', error);
+        console.error('Load settings error:', error);
     }
 }
 
-async function updateSettings(e) {
-    e.preventDefault();
-
-    const apiKey = document.getElementById('apiKey').value;
-    const model = document.getElementById('model').value;
-    const temperature = parseFloat(document.getElementById('temperature').value);
-    const maxTokens = parseInt(document.getElementById('maxTokens').value);
+async function saveSettings() {
+    const settings = {
+        api_key: document.getElementById('apiKey').value,
+        model: document.getElementById('model').value,
+        temperature: parseFloat(document.getElementById('temperature').value),
+        max_tokens: parseInt(document.getElementById('maxTokens').value)
+    };
 
     try {
-        const response = await fetch(`${API_BASE}/settings`, {
-            method: 'PUT',
+        const res = await fetch(`${API_BASE}/settings`, {
+            method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ api_key: apiKey, model, temperature, max_tokens: maxTokens })
+            body: JSON.stringify(settings)
         });
 
-        if (!response.ok) throw new Error('Failed to update settings');
-
-        alert('Settings updated successfully!');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        alert('Settings saved successfully!');
+        checkApiStatus();
     } catch (error) {
-        alert(`Error: ${error.message}`);
+        alert(`Error saving settings: ${error.message}`);
     }
 }
 
-async function testConnection() {
-    showLoading(true);
+function resetSettings() {
+    if (confirm('Reset all settings to defaults?')) {
+        localStorage.removeItem('freeco_settings');
+        loadSettings();
+    }
+}
 
+async function checkApiStatus() {
     try {
-        const response = await fetch(`${API_BASE}/settings/test-minimax`, {
-            method: 'POST'
-        });
-
-        const data = await response.json();
-        const statusEl = document.getElementById('connectionStatus');
-
-        if (data.connected) {
-            statusEl.innerHTML = '<span class="status-indicator connected"></span><span>Connected</span>';
+        const res = await fetch(`${API_BASE}/health`);
+        const data = await res.json();
+        const status = document.getElementById('apiStatus');
+        if (data.status === 'ok') {
+            status.innerHTML = '✅ Connected - API is running and ready.';
+            status.style.color = '#10b981';
         } else {
-            statusEl.innerHTML = '<span class="status-indicator disconnected"></span><span>Connection failed</span>';
+            status.innerHTML = '❌ Disconnected - Check your settings.';
+            status.style.color = '#ef4444';
         }
     } catch (error) {
-        alert(`Error: ${error.message}`);
-    } finally {
-        showLoading(false);
+        const status = document.getElementById('apiStatus');
+        status.innerHTML = '❌ Error - Cannot reach API.';
+        status.style.color = '#ef4444';
     }
 }
 
 // ===== MODALS =====
-
 function openModal(modalId) {
-    document.getElementById(modalId).classList.add('active');
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'flex';
+        modal.classList.add('active');
+    }
 }
 
 function closeModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.remove('active');
+    }
 }
 
 // ===== UTILITIES =====
-
 function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
 }
 
-function showLoading(show) {
-    const overlay = document.getElementById('loadingOverlay');
-    if (show) {
-        overlay.classList.add('active');
-    } else {
-        overlay.classList.remove('active');
-    }
-}
-
-async function checkHealth() {
-    try {
-        const response = await fetch(`${API_BASE}/health`);
-        const data = await response.json();
-        console.log('Health check:', data);
-    } catch (error) {
-        console.error('Health check failed:', error);
-    }
-}
-
 async function loadInitialData() {
-    await loadTasks();
-    await loadDocuments();
-    await loadSettings();
+    try {
+        await fetch(`${API_BASE}/health`);
+        switchTab('chat');
+    } catch (error) {
+        console.error('Initial load error:', error);
+    }
 }
